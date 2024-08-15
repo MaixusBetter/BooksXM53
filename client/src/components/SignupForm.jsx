@@ -1,22 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Button, Alert } from 'react-bootstrap';
-//import { createUser } from '../utils/API';
-// for refactor, hints from classwork activities in "MERN" week 
 import { useMutation } from '@apollo/client';
 import { ADD_USER } from '../utils/mutations';
 import Auth from '../utils/auth';
 
 const SignupForm = () => {
-  // set initial form state
   const [userFormData, setUserFormData] = useState({ username: '', email: '', password: '' });
-  // set state for form validation
-  const [validated] = useState(false);
-  // set state for alert
+  const [validated] = useState(false); // This state seems unnecessary if you’re not using it in logic
   const [showAlert, setShowAlert] = useState(false);
 
-  // new code
   const [addUser, { error }] = useMutation(ADD_USER);
-  
+
   useEffect(() => {
     if (error) {
       setShowAlert(true);
@@ -32,24 +26,25 @@ const SignupForm = () => {
 
   const handleFormSubmit = async (event) => {
     event.preventDefault();
-
-    // check if form has everything (as per react-bootstrap docs)
     const form = event.currentTarget;
+
     if (form.checkValidity() === false) {
       event.preventDefault();
       event.stopPropagation();
+      return; // Ensure to exit if form validation fails
     }
 
-    // new code
     try {
       const { data } = await addUser({
         variables: { ...userFormData },
       });
 
-      Auth.login(data.addUser.token);
+      const token = data.addUser.token;
+      console.log('Collected Token:', token); // Debugging log
+      Auth.login(token); // Ensure Auth.login correctly handles the token
     } catch (err) {
-      console.error(err);
-    };
+      console.error(err); // Log any errors for debugging
+    }
 
     setUserFormData({
       username: '',
@@ -60,9 +55,7 @@ const SignupForm = () => {
 
   return (
     <>
-      {/* This is needed for the validation functionality above */}
       <Form noValidate validated={validated} onSubmit={handleFormSubmit}>
-        {/* show alert if server response is bad */}
         <Alert dismissible onClose={() => setShowAlert(false)} show={showAlert} variant='danger'>
           Something went wrong with your signup!
         </Alert>
@@ -105,6 +98,7 @@ const SignupForm = () => {
           />
           <Form.Control.Feedback type='invalid'>Password is required!</Form.Control.Feedback>
         </Form.Group>
+
         <Button
           disabled={!(userFormData.username && userFormData.email && userFormData.password)}
           type='submit'
